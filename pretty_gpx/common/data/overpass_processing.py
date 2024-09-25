@@ -15,7 +15,8 @@ from pretty_gpx.common.utils.utils import are_close
 from pretty_gpx.common.data.overpass_request import ListLonLat
 
 @dataclass(kw_only=True)
-class Surface_Polygons:
+class SurfacePolygons:
+    """Class to store the polygons to create patch collections."""
     exterior_polygons: list[Polygon]
     interior_polygons: list[Polygon]
 
@@ -32,9 +33,9 @@ def get_ways_coordinates_from_results(api_result: overpy.Result) -> list[ListLon
 
 
 def get_polygons_from_closed_ways(ways_l: list[overpy.Way]) -> list[ShapelyPolygon]:
-    """
-    Sometimes ways instead of relations are used to describe an area
-    It have an impact on the map mainly for rivers
+    """Sometimes ways instead of relations are used to describe an area.
+    
+    It have an impact on the map mainly for rivers.
     """
     river_way_polygon = []
     for way in ways_l:
@@ -52,10 +53,7 @@ def get_polygons_from_closed_ways(ways_l: list[overpy.Way]) -> list[ShapelyPolyg
 
 
 def get_polygons_from_relations(results: overpy.Result) -> list[ShapelyPolygon]:
-    """
-    Get the shapely polygons from the results with all the relations obtained 
-    with the Overpass API
-    """
+    """Get the shapely polygons from the results with all the relations obtained with the Overpass API."""
     polygon_l = []
     relations = results.get_relations()
     for i in range(len(relations)):
@@ -66,9 +64,7 @@ def get_polygons_from_relations(results: overpy.Result) -> list[ShapelyPolygon]:
 
 
 def get_polygons_from_relation(relation: overpy.Relation) -> list[ShapelyPolygon]:
-    """
-    Get the polygons from a single relation
-    """
+    """Get the polygons from a single relation."""
     polygon_l = []
     relation_members = relation.members
     if relation_members is not None:
@@ -76,9 +72,9 @@ def get_polygons_from_relation(relation: overpy.Relation) -> list[ShapelyPolygon
         inner_geometry_relation_i: list[list[overpy.RelationWayGeometryValue]] = []
         outer_geometry_relation_i,inner_geometry_relation_i = get_members_from_relation(relation)
 
-        # TODO calculate eps to be 0.5m in lat/lon near the points
-        outer_geometry_relation_i = merge_ways(outer_geometry_relation_i, eps=1e-3)
-        inner_geometry_relation_i = merge_ways(inner_geometry_relation_i, eps=1e-3)
+        # TODO: calculate eps to be 0.5m in lat/lon near the points
+        outer_geometry_relation_i = merge_ways(outer_geometry_relation_i, eps=1e-5)
+        inner_geometry_relation_i = merge_ways(inner_geometry_relation_i, eps=1e-5)
 
         polygon_l += create_polygons_from_geom(outer_geometry_relation_i,inner_geometry_relation_i)
     
@@ -86,22 +82,20 @@ def get_polygons_from_relation(relation: overpy.Relation) -> list[ShapelyPolygon
 
 def get_members_from_relation(relation: overpy.Relation) -> tuple[list[list[overpy.RelationWayGeometryValue]],
                                                                   list[list[overpy.RelationWayGeometryValue]]]:
-    """
-    Get the members from a relation and classify them by their role
-    """
+    """Get the members from a relation and classify them by their role."""
     relation_members = relation.members
     if relation_members is not None:
         outer_geometry_l = []
         inner_geometry_l = []
         for member in relation_members:
             if type(member) == overpy.RelationRelation:
-                logger.debug(f"Found a RelationRelation i.e. a relation in the members of a relation")
+                logger.debug("Found a RelationRelation i.e. a relation in the members of a relation")
                 relation_inside_member = member.resolve(resolve_missing=True)
                 outer_subrelation,inner_subrelation = get_members_from_relation(relation_inside_member)
                 outer_geometry_l += outer_subrelation
                 inner_geometry_l += inner_subrelation
             elif type(member) == overpy.RelationWay:
-                if member.geometry == None:
+                if member.geometry is None:
                     continue
                 if member.role == "outer":
                     outer_geometry_l.append(member.geometry)
@@ -110,16 +104,17 @@ def get_members_from_relation(relation: overpy.Relation) -> tuple[list[list[over
                 else:
                     raise ValueError(f"Unexpected member role in a relation {member.role} not in ['inner','outer']")
             else:
-                raise TypeError(f"Unexpected member type {type(member)} not in [overpy.RelationWay, overpy.RelationRelation]")
+                raise TypeError(f"Unexpected member type {type(member)} not in [RelationWay, RelationRelation]")
     return outer_geometry_l,inner_geometry_l
 
 
-def merge_ways(geometry_l: list[list[overpy.RelationWayGeometryValue]],
-               eps: float = 1e-3) -> list[list[overpy.RelationWayGeometryValue]]:
-    """
+def merge_ways(geometry_l: list[T],
+               eps: float = 1e-5) -> list[T]:
+    """Merge ways.
+    
     The relations member are sometimes splitted. For example,
     the outer line can be made of multiple ways. 
-    Here we try to merge all members that have a common starting/ending point
+    Here we try to merge all members that have a common starting/ending point.
     """
     p=0
     nb_merged = 0
@@ -165,11 +160,10 @@ def merge_ways(geometry_l: list[list[overpy.RelationWayGeometryValue]],
 
 def create_polygons_from_geom(outer_geoms: list[list[overpy.RelationWayGeometryValue]],
                               inner_geoms: list[list[overpy.RelationWayGeometryValue]]) -> list[ShapelyPolygon]:
-    """
-    Creates shapely polygons (defined by the exterior shell and the holes) for a single 
-    relation. If multiple outer shells are there, creates multiple polygons instead of a 
-    shapely.MultiPolygons
-    Therefore for all relations, the area are described using only ShapelyPolygons
+    """Creates shapely polygons (defined by the exterior shell and the holes) for a single relation.
+    
+    If multiple outer shells are there, creates multiple polygons instead of a shapely.MultiPolygons
+    Therefore for all relations, the area are described using only ShapelyPolygons.
     """
     polygon_l = []
     for outer_geom in outer_geoms:
@@ -199,15 +193,15 @@ def create_polygons_from_geom(outer_geoms: list[list[overpy.RelationWayGeometryV
 
 
 def get_lat_lon_from_geometry(geom: list[overpy.RelationWayGeometryValue]) -> list[tuple[float,float]]:
-    """Returns latitude and longitude points in order to create a shapely shape"""
+    """Returns latitude and longitude points in order to create a shapely shape."""
     point_l = []
     for point in geom:
         point_l.append((float(point.lon),float(point.lat)))
     return point_l
 
 
-def create_patch_collection_from_polygons(polygons_l: list[ShapelyPolygon]) -> Surface_Polygons:
-    """Create a patch list"""
+def create_patch_collection_from_polygons(polygons_l: list[ShapelyPolygon]) -> SurfacePolygons:
+    """Create a patch list."""
     patches_exterior = []
     patches_interior = []
     for geometry in polygons_l:
@@ -216,6 +210,6 @@ def create_patch_collection_from_polygons(polygons_l: list[ShapelyPolygon]) -> S
         for i in range(len(geometry.interiors)):
             interior = Polygon(np.array(geometry.interiors[i].xy).T)
             patches_interior.append(interior)
-    surface = Surface_Polygons(exterior_polygons=patches_exterior,
+    surface = SurfacePolygons(exterior_polygons=patches_exterior,
                                interior_polygons=patches_interior)
     return surface

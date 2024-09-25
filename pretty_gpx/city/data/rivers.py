@@ -5,7 +5,7 @@ import os
 from pretty_gpx.common.data.overpass_processing import create_patch_collection_from_polygons
 from pretty_gpx.common.data.overpass_processing import get_polygons_from_closed_ways
 from pretty_gpx.common.data.overpass_processing import get_polygons_from_relations
-from pretty_gpx.common.data.overpass_processing import Surface_Polygons
+from pretty_gpx.common.data.overpass_processing import SurfacePolygons
 from pretty_gpx.common.data.overpass_request import OverpassQuery
 from pretty_gpx.common.gpx.gpx_bounds import GpxBounds
 from pretty_gpx.common.gpx.gpx_data_cache_handler import GpxDataCacheHandler
@@ -42,7 +42,7 @@ def prepare_download_city_rivers(query: OverpassQuery,
 
 
 def process_city_rivers(query: OverpassQuery,
-                        bounds: GpxBounds) -> Surface_Polygons:
+                        bounds: GpxBounds) -> SurfacePolygons:
     """Process the overpass API result to get the rivers of a city."""
     if query.is_cached(RIVERS_CACHE.name):
         cache_file = query.get_cache_file(RIVERS_CACHE.name)

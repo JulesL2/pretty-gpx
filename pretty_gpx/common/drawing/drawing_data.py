@@ -10,7 +10,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path
 
-from pretty_gpx.common.data.overpass_processing import Surface_Polygons
+from pretty_gpx.common.data.overpass_processing import SurfacePolygons
 
 
 @dataclass(kw_only=True, init=False)
@@ -103,7 +103,7 @@ class LineCollectionData(BaseDrawingData):
 @dataclass
 class PolygonCollectionData:
     """ShapelyPolygon Data."""
-    polygons: Surface_Polygons
+    polygons: SurfacePolygons
 
     def plot(self, ax: Axes, color_patch: str, color_background: str) -> None:
         """Plot the polygons."""
