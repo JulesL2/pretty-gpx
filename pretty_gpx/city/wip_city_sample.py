@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 """Work in progress. Generate a poster from a urban marathon GPX track."""
 import os
+import sys
+sys.path.insert(0,os.getcwd())
+
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
