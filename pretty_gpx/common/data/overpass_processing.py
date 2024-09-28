@@ -112,6 +112,7 @@ def get_polygons_from_closed_ways(ways_l: list[Way]) -> list[ShapelyPolygon]:
     return river_way_polygon
 
 
+@profile
 def get_polygons_from_relations(results: Result) -> list[ShapelyPolygon]:
     """Get the shapely polygons from the results with all the relations obtained with the Overpass API."""
     polygon_l = []
