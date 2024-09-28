@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from pretty_gpx.city.data.airports import AirportRoadsType
 from pretty_gpx.city.data.roads import CityRoadType
 from pretty_gpx.common.layout.paper_size import PAPER_SIZES
 from pretty_gpx.common.layout.paper_size import PaperSize
@@ -20,6 +21,7 @@ class CityLinewidthParams:
 
     linewidth_priority: dict[CityRoadType, float]
     linewidth_track: float
+    linewidth_airports: dict[AirportRoadsType, float]
 
     linewidth_rails: float
     linewidth_sleepers: float
@@ -31,6 +33,7 @@ class CityLinewidthParams:
         scale = float(new_diag_mm/current_diag_mm)
 
         updated_lw_priority = {road_type: value * scale for road_type, value in self.linewidth_priority.items()}
+        updated_lw_airport = {road_type: value * scale for road_type, value in self.linewidth_airports.items()}
         updated_lw_track = self.linewidth_track * scale
 
         updated_lw_railways = self.linewidth_rails * scale
@@ -41,7 +44,8 @@ class CityLinewidthParams:
                                    linewidth_priority=updated_lw_priority,
                                    linewidth_track=updated_lw_track,
                                    linewidth_rails=updated_lw_railways,
-                                   linewidth_sleepers=updated_lw_sleepers)
+                                   linewidth_sleepers=updated_lw_sleepers,
+                                   linewidth_airports=updated_lw_airport)
 
     @staticmethod
     def default(paper_size: PaperSize, diagonal_distance_m: float) -> 'CityLinewidthParams':
@@ -60,6 +64,12 @@ class CityLinewidthParams:
             CityRoadType.ACCESS_ROAD: 0.1*scale
         }
 
+        linewidth_airports = {
+            AirportRoadsType.RUNWAY: 3*scale,
+            AirportRoadsType.TAXIWAY: 1.25*scale,
+        }
+
+
         # Set a maximum track linewidth to avoid masking data
         max_track_linewidth = (linewidth_priority[CityRoadType.SECONDARY_ROAD]+
                                linewidth_priority[CityRoadType.SECONDARY_ROAD])/2.0
@@ -73,4 +83,5 @@ class CityLinewidthParams:
                                    linewidth_priority=linewidth_priority,
                                    linewidth_track=linewidth_track,
                                    linewidth_rails=linewidth_rails,
-                                   linewidth_sleepers=linewidth_sleepers)
+                                   linewidth_sleepers=linewidth_sleepers,
+                                   linewidth_airports=linewidth_airports)

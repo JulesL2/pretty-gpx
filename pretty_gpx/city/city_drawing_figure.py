@@ -29,8 +29,12 @@ class CityDrawingFigure(BaseDrawingFigure):
     road_data: list[BaseDrawingData]
     point_data: list[BaseDrawingData]
     rivers_data: list[PolygonCollectionData]
+    forests_data: list[PolygonCollectionData]
+    farmland_data: list[PolygonCollectionData]
     railways_data: list[BaseDrawingData]
     sleepers_data: list[BaseDrawingData]
+    airports_data: list[BaseDrawingData]
+    airports_location: list[BaseDrawingData]
 
     title: TextData
     stats: TextData
@@ -43,8 +47,11 @@ class CityDrawingFigure(BaseDrawingFigure):
              track_color: str,
              point_color: str,
              rivers_color: str,
+             forets_color: str,
+             farmland_color: str,
              railways_color: str,
-             sleepers_color: str
+             sleepers_color: str,
+             runways_color: str
              ) -> None:
         """Plot the background image and the annotations on top of it."""
         self.setup(fig, ax)
@@ -52,6 +59,12 @@ class CityDrawingFigure(BaseDrawingFigure):
 
         for surface_data in self.rivers_data:
             surface_data.plot(ax, rivers_color, background_color)
+
+        for surface_data in self.farmland_data:
+            surface_data.plot(ax, farmland_color, background_color)
+
+        for surface_data in self.forests_data:
+            surface_data.plot(ax, forets_color, farmland_color)
 
         for data in self.road_data:
             data.plot(ax, road_color)
@@ -61,6 +74,12 @@ class CityDrawingFigure(BaseDrawingFigure):
 
         for data in self.sleepers_data:
             data.plot(ax, sleepers_color)
+
+        for data in self.airports_data:
+            data.plot(ax, runways_color)
+
+        for data in self.airports_location:
+            data.plot(ax, road_color)
 
         for data in self.track_data:
             data.plot(ax, track_color)
