@@ -1,12 +1,17 @@
 #!/usr/bin/python3
 """Work in progress. Generate a poster from a urban marathon GPX track."""
 import os
+import sys
+sys.path.insert(0,os.getcwd())
+
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 from pretty_gpx.city.city_drawing_figure import CityDrawingFigure
 from pretty_gpx.city.city_vertical_layout import CityVerticalLayout
+from pretty_gpx.city.data.railways import prepare_download_city_railways
+from pretty_gpx.city.data.railways import process_city_railways
 from pretty_gpx.city.data.rivers import prepare_download_city_rivers
 from pretty_gpx.city.data.rivers import process_city_rivers
 from pretty_gpx.city.data.roads import prepare_download_city_roads
@@ -63,6 +68,8 @@ def plot(gpx_track: GpxTrack, theme_colors: ThemeColors) -> None:
     prepare_download_city_rivers(query=total_query,
                                  bounds=roads_bounds)
 
+    prepare_download_city_railways(query=total_query,
+                                   bounds=roads_bounds)
 
     # Merge and run all queries
     total_query.launch_queries()
@@ -75,15 +82,23 @@ def plot(gpx_track: GpxTrack, theme_colors: ThemeColors) -> None:
     rivers = process_city_rivers(query=total_query,
                                  bounds=roads_bounds)
 
+    railways, sleepers = process_city_railways(query=total_query,
+                                               bounds=roads_bounds,
+                                               latlon_aspect_ratio=base_plotter.latlon_aspect_ratio)
 
     track_data: list[BaseDrawingData] = []
     road_data: list[BaseDrawingData] = []
     point_data: list[BaseDrawingData] = []
     rivers_data: list[PolygonCollectionData] = []
+    railways_data: list[BaseDrawingData] = []
+    sleepers_data: list[BaseDrawingData] = []
 
     rivers_data.append(PolygonCollectionData(polygons=rivers))
 
     track_data.append(PlotData(x=gpx_track.list_lon, y=gpx_track.list_lat, linewidth=city_linewidth.linewidth_track))
+
+    railways_data.append(LineCollectionData(railways, linewidth=0.15))
+    sleepers_data.append(LineCollectionData(sleepers, linewidth=0.75))
 
     for priority, way in roads.items():
         road_data.append(LineCollectionData(way, linewidth=city_linewidth.linewidth_priority[priority], zorder=1))
@@ -123,6 +138,8 @@ def plot(gpx_track: GpxTrack, theme_colors: ThemeColors) -> None:
                                 road_data=road_data,
                                 point_data=point_data,
                                 rivers_data=rivers_data,
+                                railways_data=railways_data,
+                                sleepers_data=sleepers_data,
                                 title=title,
                                 stats=stats)
 
@@ -134,7 +151,9 @@ def plot(gpx_track: GpxTrack, theme_colors: ThemeColors) -> None:
                  road_color=road_color,
                  track_color=theme_colors.track_color,
                  point_color=theme_colors.point_color,
-                 rivers_color=theme_colors.rivers_color)
+                 rivers_color=theme_colors.rivers_color,
+                 sleepers_color=theme_colors.sleepers_color,
+                 railways_color=theme_colors.railways_color)
 
     plt.show()
 
