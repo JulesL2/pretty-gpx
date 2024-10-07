@@ -5,15 +5,16 @@ import os
 import numpy as np
 
 from pretty_gpx.common.data.overpass_processing import get_ways_coordinates_from_results
+from pretty_gpx.common.data.overpass_processing import merge_ways
 from pretty_gpx.common.data.overpass_request import ListLonLat
 from pretty_gpx.common.data.overpass_request import OverpassQuery
 from pretty_gpx.common.gpx.gpx_bounds import GpxBounds
 from pretty_gpx.common.gpx.gpx_data_cache_handler import GpxDataCacheHandler
 from pretty_gpx.common.utils.pickle_io import read_pickle
 from pretty_gpx.common.utils.pickle_io import write_pickle
-from pretty_gpx.common.utils.utils import EARTH_RADIUS_M
 from pretty_gpx.common.utils.profile import profile
 from pretty_gpx.common.utils.profile import Profiling
+from pretty_gpx.common.utils.utils import EARTH_RADIUS_M
 
 RAILWAYS_CACHE = GpxDataCacheHandler(name='railways', extension='.pkl')
 
@@ -23,7 +24,7 @@ RAILWAYS_ARRAY_NAME = "railways"
 
 @profile
 def prepare_download_city_railways(query: OverpassQuery,
-                                   bounds: GpxBounds):
+                                   bounds: GpxBounds) -> None:
     """Download railways from OpenStreetMap.
 
     Args:
@@ -57,17 +58,19 @@ def process_city_railways(query: OverpassQuery,
         with Profiling.Scope("Process railways"):
             result = query.get_query_result(RAILWAYS_ARRAY_NAME)
             railways = get_ways_coordinates_from_results(result)
+            railways = merge_ways(railways,eps=1e-6)
             sleepers = []
             # To calculate the size of the sleeper and the distance between sleepers
             # We need to have a caracteristic length in the picture
             caracteristic_length = (bounds.dx_m**2 + bounds.dy_m**2)**0.5
             sleeper_length = caracteristic_length*1.25e-6
             sleeper_distance = sleeper_length*50
-            for railway in railways:
-                sleepers += generate_evenly_spaced_sleepers(railway,
-                                                            lat_lon_aspect_ratio=latlon_aspect_ratio,
-                                                            sleeper_distance=sleeper_distance,
-                                                            sleeper_length=sleeper_length)
+            with Profiling.Scope("Generate sleepers"):
+                for railway in railways:
+                    sleepers += generate_evenly_spaced_sleepers(railway,
+                                                                lat_lon_aspect_ratio=latlon_aspect_ratio,
+                                                                sleeper_distance=sleeper_distance,
+                                                                sleeper_length=sleeper_length)
         cache_pkl = RAILWAYS_CACHE.get_path(bounds)
         write_pickle(cache_pkl, (railways, sleepers))
         query.add_cached_result(RAILWAYS_CACHE.name, cache_file=cache_pkl)
@@ -75,11 +78,10 @@ def process_city_railways(query: OverpassQuery,
 
 
 
-@profile
 def generate_evenly_spaced_sleepers(coordinates: list[tuple[float, float]],
                                     lat_lon_aspect_ratio: float,
                                     sleeper_distance: float=0.5,
-                                    sleeper_length: float=0.1):
+                                    sleeper_length: float=0.1) -> list[ListLonLat]:
     """Generate sleepers to distinguish rails from roads.
     
     For railways, sleepers are created so that railways are distinguished on the map,
@@ -89,7 +91,7 @@ def generate_evenly_spaced_sleepers(coordinates: list[tuple[float, float]],
     meters_to_degrees = 180.0/(EARTH_RADIUS_M*np.pi)
     degrees_to_meters = 1/meters_to_degrees
 
-    segments = []
+    segments: list[ListLonLat] = []
     total_distance = 0
     next_sleeper_distance = sleeper_distance*meters_to_degrees
     sleeper_length = sleeper_length*meters_to_degrees
@@ -119,7 +121,8 @@ def generate_evenly_spaced_sleepers(coordinates: list[tuple[float, float]],
                 perp_dx = -dy_grad / length * sleeper_length
                 perp_dy = dx_grad / length * sleeper_length
 
-                segments.append([(sleeper_x - perp_dx, sleeper_y - perp_dy), (sleeper_x + perp_dx, sleeper_y + perp_dy)])
+                segments.append([(sleeper_x - perp_dx, sleeper_y - perp_dy),
+                                 (sleeper_x + perp_dx, sleeper_y + perp_dy)])
 
             # Update the distance for the next sleeper
             next_sleeper_distance += sleeper_distance
