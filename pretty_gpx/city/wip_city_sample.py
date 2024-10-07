@@ -94,8 +94,8 @@ def plot(gpx_track: GpxTrack, theme_colors: ThemeColors) -> None:
 
     track_data.append(PlotData(x=gpx_track.list_lon, y=gpx_track.list_lat, linewidth=city_linewidth.linewidth_track))
 
-    railways_data.append(LineCollectionData(railways, linewidth=0.15))
-    sleepers_data.append(LineCollectionData(sleepers, linewidth=0.75))
+    railways_data.append(LineCollectionData(railways, linewidth=city_linewidth.linewidth_rails))
+    sleepers_data.append(LineCollectionData(sleepers, linewidth=city_linewidth.linewidth_sleepers))
 
     for priority, way in roads.items():
         road_data.append(LineCollectionData(way, linewidth=city_linewidth.linewidth_priority[priority], zorder=1))

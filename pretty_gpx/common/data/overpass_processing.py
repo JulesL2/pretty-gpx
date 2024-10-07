@@ -69,7 +69,7 @@ def get_ways_coordinates_from_results(api_result: Result) -> list[ListLonLat]:
 
 
 @profile
-def get_rivers_polygons_from_lines( api_result: overpy.Result,
+def get_rivers_polygons_from_lines( api_result: Result,
                                     width: float) -> list[ShapelyPolygon]:
     """Get the rivers center's line into a polygon with a fixed width corresponding to small rivers."""
     ways_coords = []
