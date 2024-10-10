@@ -14,9 +14,9 @@ from overpy import RelationWay
 from overpy import RelationWayGeometryValue
 from overpy import Result
 from overpy import Way
+from shapely import LinearRing as ShapelyLinearRing
 from shapely import LineString
 from shapely import MultiPolygon as ShapelyMultiPolygon
-from shapely import LinearRing as ShapelyLinearRing
 from shapely import Point as ShapelyPoint
 from shapely import Polygon as ShapelyPolygon
 from shapely.prepared import prep
@@ -139,8 +139,8 @@ def get_polygons_from_relation(relation: Relation) -> list[ShapelyPolygon]:
         outer_geometry_relation_i, inner_geometry_relation_i = get_members_from_relation(relation)
 
         # TODO: calculate eps to be 0.5m in lat/lon near the points
-        outer_geometry_relation_i = merge_ways_closed_shapes(outer_geometry_relation_i, eps=1e-4, max_depth=4)
-        inner_geometry_relation_i = merge_ways_closed_shapes(inner_geometry_relation_i, eps=1e-4, max_depth=4)
+        outer_geometry_relation_i = merge_ways_closed_shapes(outer_geometry_relation_i, eps=5e-5, max_depth=18)
+        inner_geometry_relation_i = merge_ways_closed_shapes(inner_geometry_relation_i, eps=5e-5, max_depth=18)
 
         polygon_l += create_polygons_from_geom(outer_geometry_relation_i, inner_geometry_relation_i)
 

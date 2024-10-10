@@ -26,6 +26,9 @@ class CityLinewidthParams:
     linewidth_rails: float
     linewidth_sleepers: float
 
+    sleepers_distance: float
+    sleepers_length: float
+
     def change_paper_size(self, new_paper_size: PaperSize) -> 'CityLinewidthParams':
         """Scale parameters to new paper size."""
         current_diag_mm = np.linalg.norm([self.paper_size.w_mm, self.paper_size.h_mm])
@@ -39,13 +42,18 @@ class CityLinewidthParams:
         updated_lw_railways = self.linewidth_rails * scale
         updated_lw_sleepers = self.linewidth_sleepers * scale
 
+        updated_sleepers_distance = self.sleepers_distance * scale
+        updated_sleepers_length = self.sleepers_length * scale
+
         return CityLinewidthParams(paper_size=new_paper_size,
                                    caracteristic_distance=self.caracteristic_distance*scale,
                                    linewidth_priority=updated_lw_priority,
                                    linewidth_track=updated_lw_track,
                                    linewidth_rails=updated_lw_railways,
                                    linewidth_sleepers=updated_lw_sleepers,
-                                   linewidth_airports=updated_lw_airport)
+                                   linewidth_airports=updated_lw_airport,
+                                   sleepers_distance=updated_sleepers_distance,
+                                   sleepers_length=updated_sleepers_length)
 
     @staticmethod
     def default(paper_size: PaperSize, diagonal_distance_m: float) -> 'CityLinewidthParams':
@@ -65,8 +73,8 @@ class CityLinewidthParams:
         }
 
         linewidth_airports = {
-            AirportRoadsType.RUNWAY: 3*scale,
-            AirportRoadsType.TAXIWAY: 1.25*scale,
+            AirportRoadsType.RUNWAY: 2*scale,
+            AirportRoadsType.TAXIWAY: 0.5*scale,
         }
 
 
@@ -78,10 +86,15 @@ class CityLinewidthParams:
         linewidth_rails = 0.15
         linewidth_sleepers = 0.25
 
+        sleepers_distance = 75
+        sleepers_length = 3
+
         return CityLinewidthParams(paper_size=paper_size,
                                    caracteristic_distance=diagonal_distance_m,
                                    linewidth_priority=linewidth_priority,
                                    linewidth_track=linewidth_track,
                                    linewidth_rails=linewidth_rails,
                                    linewidth_sleepers=linewidth_sleepers,
-                                   linewidth_airports=linewidth_airports)
+                                   linewidth_airports=linewidth_airports,
+                                   sleepers_distance=sleepers_distance,
+                                   sleepers_length=sleepers_length)
