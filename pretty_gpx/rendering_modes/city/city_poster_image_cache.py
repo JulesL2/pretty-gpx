@@ -44,6 +44,34 @@ class CityPosterDrawingData:
     title_txt: str
     stats_text: str
 
+    @staticmethod
+    def get_stats_items(dist_km_int: int,
+                        uphill_m_int: int,
+                        duration_s_float: float | None) -> list[str]:
+        """Get a list of the items to plot in the stat panel."""
+        stats_items = []
+        if dist_km_int > 0:
+            stats_items.append(f"{dist_km_int} km")
+        if uphill_m_int > 0:
+            stats_items.append(f"{uphill_m_int} m D+")
+        if duration_s_float is not None and duration_s_float > 0:
+            stats_items.append(f"{format_timedelta(duration_s_float)}")
+        return stats_items
+
+    @staticmethod
+    def build_stats_text(stats_items: list[str]) -> str:
+        """Transform the stats items list into a string to display."""
+        if len(stats_items) == 0:
+            return ""
+        elif len(stats_items) == 1:
+            return stats_items[0]
+        elif len(stats_items) == 2:
+            return f"{stats_items[0]} - {stats_items[1]}"
+        elif len(stats_items) == 3:
+            return f"{stats_items[0]} - {stats_items[1]}\n{stats_items[2]}"
+        else:
+            raise ValueError("The stat items list length is not valid")
+
 
 @dataclass
 class CityPosterImageCache:
@@ -53,8 +81,36 @@ class CityPosterImageCache:
     stats_uphill_m: float
     stats_duration_s: float | None
 
+    last_stats_n_lines: int
+
     plotter: CityDrawingFigure
     gpx_data: CityAugmentedGpxData
+
+
+    def __init__(self,
+                 stats_dist_km: float,
+                 stats_uphill_m: float,
+                 stats_duration_s: float | None,
+                 plotter: CityDrawingFigure,
+                 gpx_data: CityAugmentedGpxData):
+        """Initialize the class."""
+        self.stats_dist_km = stats_dist_km
+        self.stats_uphill_m = stats_uphill_m
+        self.stats_duration_s = stats_duration_s
+        self.plotter = plotter
+        self.gpx_data = gpx_data
+
+        stats_items = CityPosterDrawingData.get_stats_items(dist_km_int=int(stats_dist_km),
+                                                            uphill_m_int=int(stats_uphill_m),
+                                                            duration_s_float=stats_duration_s)
+    
+        if len(stats_items) <= 2:
+            self.last_stats_n_lines = 1
+        elif len(stats_items) == 3:
+            self.last_stats_n_lines = 2
+        else:
+            raise ValueError("Unexpected length of the stats items")
+
 
     @profile
     @staticmethod
@@ -68,11 +124,16 @@ class CityPosterImageCache:
     @staticmethod
     def from_gpx_data(gpx_data: CityAugmentedGpxData,
                       paper_size: PaperSize,
-                      force_two_line: bool=False) -> 'CityPosterImageCache':
+                      stats_nb_lines: int | None = None) -> 'CityPosterImageCache':
         """Create a CityPosterImageCache from a GPX file."""
-        if gpx_data.duration_s is not None or force_two_line:
+        if (gpx_data.duration_s is not None and stats_nb_lines is None) or (
+            stats_nb_lines is not None and stats_nb_lines == 2):
+            logger.info("Building a layout for a two lines stats panel")
             layout = CityVerticalLayout.two_lines_stats()
         else:
+            if stats_nb_lines is not None and stats_nb_lines != 1:
+                raise ValueError("Number of stats lines passed in arguments is incorrect")
+            logger.info("Building a layout for a single line stats panel")
             layout = CityVerticalLayout.default()
 
         # Download the elevation map at the correct layout
@@ -86,39 +147,54 @@ class CityPosterImageCache:
                                                    drawing_style_params)
 
         logger.info("Successful GPX Processing")
-        return CityPosterImageCache(stats_dist_km=gpx_data.dist_km,
-                                    stats_uphill_m=gpx_data.uphill_m,
-                                    stats_duration_s=gpx_data.duration_s,
-                                    plotter=plotter,
-                                    gpx_data=gpx_data)
+        poster = CityPosterImageCache(stats_dist_km=gpx_data.dist_km,
+                                      stats_uphill_m=gpx_data.uphill_m,
+                                      stats_duration_s=gpx_data.duration_s,
+                                      plotter=plotter,
+                                      gpx_data=gpx_data)
 
+        if stats_nb_lines is not None:
+            poster.last_stats_n_lines = stats_nb_lines
+
+        return poster
 
     def update_drawing_data(self,
                             theme_colors: ThemeColors,
                             title_txt: str,
                             uphill_m: str,
                             duration_s: str,
-                            dist_km: str) -> tuple[CityPosterDrawingData, bool]:
+                            dist_km: str) -> tuple['CityPosterImageCache',CityPosterDrawingData]:
         """Update the drawing data (can run in a separate thread)."""
         dist_km_int = int(dist_km if dist_km != '' else self.stats_dist_km)
         uphill_m_int = int(uphill_m if uphill_m != '' else self.stats_uphill_m)
         stats_duration_s = float(duration_s) if duration_s != '' else self.stats_duration_s
-        stats_text = f"{dist_km_int} km - {uphill_m_int} m D+"
 
-        if self.stats_duration_s is None and stats_duration_s is not None:
-            # An update of the poster is needed
-            update_needed = True
+        new_stats_items = CityPosterDrawingData.get_stats_items(dist_km_int=dist_km_int,
+                                                                uphill_m_int=uphill_m_int,
+                                                                duration_s_float=stats_duration_s)
+
+        new_stats_n_lines = 1 if len(new_stats_items) <= 2 else 2
+
+        if new_stats_n_lines == 1 and self.last_stats_n_lines == 2:
+            #We need to switch from a 2 lines stats panel to a single line one
             logger.info("An update of the plotter is needed")
+            self = CityPosterImageCache.from_gpx_data(self.gpx_data,
+                                                      paper_size=self.plotter.paper_size,
+                                                      stats_nb_lines=1)
+        elif new_stats_n_lines == 2 and self.last_stats_n_lines == 1:
+            #We need to switch from a single line stats panel to a double line one
+            logger.info("An update of the plotter is needed")
+            self = CityPosterImageCache.from_gpx_data(self.gpx_data,
+                                                      paper_size=self.plotter.paper_size,
+                                                      stats_nb_lines=2)
         else:
-            update_needed = False
+            self.last_stats_n_lines = new_stats_n_lines
 
-        if stats_duration_s is not None:
-            stats_text += f"\n{format_timedelta(int(stats_duration_s))}"
+        stats_text = CityPosterDrawingData.build_stats_text(stats_items=new_stats_items)
 
-        return (CityPosterDrawingData(theme_colors=theme_colors,
-                                      title_txt=title_txt,
-                                      stats_text=stats_text),
-                update_needed)
+        return self, CityPosterDrawingData(theme_colors=theme_colors,
+                                           title_txt=title_txt,
+                                           stats_text=stats_text)
 
     @profile
     def draw(self, fig: Figure, ax: Axes, poster_drawing_data: CityPosterDrawingData) -> None:

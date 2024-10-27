@@ -5,6 +5,9 @@ from nicegui import ui
 
 BOX_SHADOW_STYLE = 'box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.2)'
 
+DARK_MODE_TEXT = "🌙"
+LIGHT_MODE_TEXT = "☀️"
+
 
 def add_ui_hover_highlight_style() -> None:
     """Darken on idle and highlight on hover."""

@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 from pretty_gpx.common.gpx.gpx_track import GpxTrack
 from pretty_gpx.common.layout.paper_size import PAPER_SIZES
-from pretty_gpx.common.utils.logger import logger
 from pretty_gpx.common.utils.paths import RUNNING_DIR
 from pretty_gpx.common.utils.profile import Profiling
 from pretty_gpx.rendering_modes.city.city_poster_image_cache import CityPosterImageCache
@@ -22,15 +21,11 @@ if __name__ == "__main__":
 
         poster = CityPosterImageCache.from_gpx([os.path.join(RUNNING_DIR, "marathon_paris.gpx")], paper_size=paper)
 
-        poster_data, update = poster.update_drawing_data(theme_colors=theme,
+        poster, poster_data = poster.update_drawing_data(theme_colors=theme,
                                                          title_txt="Marathon de Paris",
                                                          uphill_m="250",
                                                          duration_s="10800",
                                                          dist_km="42.195")
-        if update is True:
-            logger.info("An update of the plotter is done")
-            poster = CityPosterImageCache.from_gpx_data(poster.gpx_data, paper_size=paper, force_two_line=update)
-
 
         poster.draw(fig, ax, poster_data)
 
