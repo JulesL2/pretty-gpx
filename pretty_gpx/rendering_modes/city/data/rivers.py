@@ -24,8 +24,9 @@ RIVERS_CACHE = GpxDataCacheHandler(name='rivers', extension='.pkl')
 RIVERS_WAYS_ARRAY_NAME = "rivers_ways"
 RIVERS_RELATIONS_ARRAY_NAME = "rivers_relations"
 RIVERS_LINE_WAYS_ARRAY_NAME = "rivers_line_ways"
+STREAMS_LINE_WAYS_ARRAY_NAME = "stream_line_ways"
 
-RIVER_LINE_WIDTH_M = 8
+RIVER_LINE_WIDTH_M = 15
 RIVER_LINE_WIDTH = np.rad2deg(RIVER_LINE_WIDTH_M/EARTH_RADIUS_M)
 
 @profile
@@ -37,7 +38,8 @@ def prepare_download_city_rivers(query: OverpassQuery,
     if os.path.isfile(cache_pkl):
         query.add_cached_result(RIVERS_CACHE.name, cache_file=cache_pkl)
     else:
-        min_len = bounds.diagonal_m*0.01
+        caracteristic_length = bounds.diagonal_m
+        min_len = caracteristic_length*0.01
         natural_water_l = ["reservoir","canal","stream_pool","lagoon","oxbow","river","lake","pond"]
         join_character = '|'
         query.add_overpass_query(array_name=RIVERS_RELATIONS_ARRAY_NAME,
@@ -59,13 +61,26 @@ def prepare_download_city_rivers(query: OverpassQuery,
                                  include_way_nodes=True,
                                  return_geometry=True)
         query.add_overpass_query(array_name=RIVERS_LINE_WAYS_ARRAY_NAME,
-                                 query_elements=['way["waterway"~"(river|fairway|flowline|stream|canal)"]'
+                                 query_elements=['way["waterway"~"(river|canal)"]'
                                                  '["tunnel"!~".*"]'],
                                  bounds=bounds,
                                  include_way_nodes=True,
                                  return_geometry=False) 
+        if get_stream_width(caracteristic_length) > 0:
+            query.add_overpass_query(array_name=STREAMS_LINE_WAYS_ARRAY_NAME,
+                                    query_elements=['way["waterway"~"(stream)"]'
+                                                    '["tunnel"!~".*"]'],
+                                    bounds=bounds,
+                                    include_way_nodes=True,
+                                    return_geometry=False)
 
-
+def get_stream_width(domain_diagonal: float) -> float:
+    """Returns a stream width in degrees on the map."""
+    if domain_diagonal > 10000:
+        width = 0.
+    else:
+        width = min(np.log(10000/domain_diagonal)*4+3,7)
+    return np.rad2deg(width/EARTH_RADIUS_M)
 
 @profile
 def process_city_rivers(query: OverpassQuery,
@@ -76,6 +91,7 @@ def process_city_rivers(query: OverpassQuery,
         rivers_patches = read_pickle(cache_file)
     else:
         with Profiling.Scope("Process Rivers"):
+            caracteristic_length = bounds.diagonal_m
             rivers_relation_results = query.get_query_result(RIVERS_RELATIONS_ARRAY_NAME)
             rivers_way_results = query.get_query_result(RIVERS_WAYS_ARRAY_NAME)
             rivers_line_results = query.get_query_result(RIVERS_LINE_WAYS_ARRAY_NAME)
@@ -85,6 +101,12 @@ def process_city_rivers(query: OverpassQuery,
             rivers_lines_polygons = get_rivers_polygons_from_lines(api_result=rivers_line_results,
                                                                    width=RIVER_LINE_WIDTH)
             rivers = rivers_lines_polygons + rivers
+            stream_linewidth = get_stream_width(caracteristic_length)
+            if stream_linewidth > 0:
+                stream_line_results = query.get_query_result(STREAMS_LINE_WAYS_ARRAY_NAME)
+                stream_line_polygons = get_rivers_polygons_from_lines(api_result=stream_line_results,
+                                                                      width=stream_linewidth)
+                rivers = stream_line_polygons + rivers
             logger.info(f"Found {len(rivers_relations)} polygons for rivers "
                         f"with relations and {len(rivers_ways)} with ways and"
                         f" {len(rivers_lines_polygons)} created with river main line")
