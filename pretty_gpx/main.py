@@ -159,7 +159,7 @@ with ui.row().style("height: 100vh; width: 100%; justify-content: center; align-
             def _update_done_callback(c: MountainPosterImageCache,
                                       poster_drawing_data: MountainPosterDrawingData) -> None:
                 """Synchronously update the plot with the MountainPosterDrawingData.
-                
+
                 (Matplotlib must run in the main thread).
                 """
                 with Profiling.Scope("Pyplot Context"), plot:

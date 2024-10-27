@@ -103,7 +103,7 @@ class CityPosterImageCache:
         stats_items = CityPosterDrawingData.get_stats_items(dist_km_int=int(stats_dist_km),
                                                             uphill_m_int=int(stats_uphill_m),
                                                             duration_s_float=stats_duration_s)
-    
+
         if len(stats_items) <= 2:
             self.last_stats_n_lines = 1
         elif len(stats_items) == 3:
@@ -258,7 +258,7 @@ def init_and_populate_drawing_figure(gpx_data: CityAugmentedGpxData,
                      fontproperties=drawing_style_params.pretty_font,
                      ha="center",
                      va="center")
-    
+
     stats_text = f"{gpx_track.list_cumul_dist_km[-1]:.2f} km - {int(gpx_track.uphill_m)} m D+"
 
     if gpx_track.duration_s is not None:

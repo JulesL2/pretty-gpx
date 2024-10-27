@@ -82,12 +82,12 @@ def get_rivers_polygons_from_lines( api_result: Result,
     for way in api_result.ways:
         if len(way.nodes) <= 2:
             continue
-        ways_coords.extend([[(float(node.lon), float(node.lat)) for node in way.nodes 
+        ways_coords.extend([[(float(node.lon), float(node.lat)) for node in way.nodes
                              if node.lat is not None and node.lon is not None]])
         new_polygons = []
     for segment in ways_coords:
         line = LineString(segment)
-        # Transforms the line into a polygon with 
+        # Transforms the line into a polygon with
         # a buffer around the line with half the width
         buffered = line.buffer(width/2.0)
         if isinstance(buffered, ShapelyPolygon):
@@ -165,11 +165,11 @@ def merge_ways_closed_shapes(segments: list[list[RelationWayGeometryValue]],
                              eps: float=1e-5,
                              max_depth: int=2) -> list[list[RelationWayGeometryValue]]:
     """Merge ways until all ways create only closed shape or the max_depth is reached.
-    
+
     This is needed because for closed shapes the algorithm sometimes miss complex/multiple merges
     that occurs at the same point in different direction.
     Or we do not want to complexify the merge way algorithm to have a O(n^2) complexity so to keep
-    the O(nlog(n)) complexity in the large majority of cases, we add extra checks only for closed shapes. 
+    the O(nlog(n)) complexity in the large majority of cases, we add extra checks only for closed shapes.
     """
     depth = 0
     all_closed = False
@@ -276,7 +276,7 @@ def merge_segments_from_hash(segments: list[Segment],
                              eps: float = 1e-4) -> list[T]:
     """Merge the segments localized using the hash table and update the hash table after each merge."""
     merged_segments = []
-    
+
     for i, segment in enumerate(segments):
         if segment.merged:
             continue
@@ -284,7 +284,7 @@ def merge_segments_from_hash(segments: list[Segment],
         current_segment = segment
         current_segment.merged = True
         merged_geom = current_segment.geom[:]
-        
+
         start_hash = hash_point(current_segment.start, eps)
         end_hash = hash_point(current_segment.end, eps)
 
@@ -314,7 +314,7 @@ def merge_segments_from_hash(segments: list[Segment],
                                         next_segment.start if end_type == 'start' else next_segment.end,
                                         eps=eps):
                         next_segment.merged = True
-                        
+
                         next_start_hash = hash_point(next_segment.start, eps)
                         next_end_hash = hash_point(next_segment.end, eps)
 
@@ -327,7 +327,7 @@ def merge_segments_from_hash(segments: list[Segment],
                         merged_geom.extend(next_segment.geom[1:])
                         current_segment = next_segment
                         found_next = True
-                        
+
                         new_start_hash = hash_point(current_segment.start, eps)
                         new_end_hash = hash_point(current_segment.end, eps)
 

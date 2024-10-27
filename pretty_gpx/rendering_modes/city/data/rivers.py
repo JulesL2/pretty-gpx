@@ -48,7 +48,7 @@ def prepare_download_city_rivers(query: OverpassQuery,
                                  bounds=bounds,
                                  include_way_nodes=True,
                                  include_relation_members_nodes=True,
-                                 return_geometry=True) 
+                                 return_geometry=True)
         query.add_overpass_query(array_name=RIVERS_WAYS_ARRAY_NAME,
                                  query_elements=['way["natural"="water"]["water"~'
                                                  f'"({join_character.join(natural_water_l)})"]',
@@ -63,7 +63,7 @@ def prepare_download_city_rivers(query: OverpassQuery,
                                                  '["tunnel"!~".*"]'],
                                  bounds=bounds,
                                  include_way_nodes=True,
-                                 return_geometry=False) 
+                                 return_geometry=False)
 
 
 

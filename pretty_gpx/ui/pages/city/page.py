@@ -47,8 +47,8 @@ def process_files(list_b: list[bytes] | list[str], new_paper_size: PaperSize) ->
 def change_paper_size(gpx_data: CityAugmentedGpxData, new_paper_size: PaperSize) -> CityPosterImageCache:
     """Return the MountainPosterImageCaches with the new paper size."""
     return CityPosterImageCache.from_gpx_data(gpx_data, new_paper_size)
- 
- 
+
+
 def city_page() -> None:
     """City Page."""
     class UiManagerCity:
@@ -148,14 +148,14 @@ def city_page() -> None:
                                                                   uphill_m=uphill_button.value,
                                                                   duration_s=duration_s_button.value,
                                                                   dist_km=dist_km_button.value)
-                    
+
                     ui_manager._cache = p_cache
                     return drawing_data
 
                 def _update_done_callback(c: CityPosterImageCache,
                                           poster_drawing_data: CityPosterDrawingData) -> None:
                     """Synchronously update the plot with the CityPosterDrawingData.
-                    
+
                     (Matplotlib must run in the main thread).
                     """
                     with Profiling.Scope("Pyplot Context"), plot_city:
@@ -187,7 +187,7 @@ def city_page() -> None:
 
                 with ui.input(label='Distance (km)', value="").on('keydown.enter', on_click_update()) as dist_km_button:
                     ui.tooltip("Press Enter to override distance from GPX")
-                
+
                 with ui.input(label='Time (enter in seconds)', value="").on('keydown.enter',
                                                                             on_click_update()) as duration_s_button:
                     ui.tooltip("Press Enter to override distance from GPX")
@@ -229,6 +229,6 @@ def city_page() -> None:
                                                                download, download_done_callback)()
 
                 ui.button('Download', on_click=on_click_download)
-                ui.button('Load example', on_click=ui_manager.on_click_load_example)                
+                ui.button('Load example', on_click=ui_manager.on_click_load_example)
 
     add_exit_button()

@@ -47,7 +47,7 @@ def prepare_download_city_forests(query: OverpassQuery,
                                  bounds=bounds,
                                  include_way_nodes=True,
                                  return_geometry=True)
-        
+
         query.add_overpass_query(array_name=FARMLAND_RELATION_NAME,
                                  query_elements=['relation["landuse"~"(farmland)"]'],
                                  bounds=bounds,

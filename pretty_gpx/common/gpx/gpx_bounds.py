@@ -85,4 +85,3 @@ class GpxBounds:
     def diagonal_m(self) -> float:
         """The diagonal of the bounds in meters."""
         return (self.dx_m**2 + self.dy_m**2)**0.5
-    
