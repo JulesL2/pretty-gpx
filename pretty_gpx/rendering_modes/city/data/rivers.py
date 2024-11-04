@@ -8,7 +8,7 @@ from pretty_gpx.common.data.overpass_processing import create_patch_collection_f
 from pretty_gpx.common.data.overpass_processing import get_polygons_from_closed_ways
 from pretty_gpx.common.data.overpass_processing import get_polygons_from_relations
 from pretty_gpx.common.data.overpass_processing import get_rivers_polygons_from_lines
-from pretty_gpx.common.data.overpass_processing import SurfacePolygons
+from pretty_gpx.common.data.overpass_processing import PolygonAlpha
 from pretty_gpx.common.data.overpass_request import OverpassQuery
 from pretty_gpx.common.gpx.gpx_bounds import GpxBounds
 from pretty_gpx.common.gpx.gpx_data_cache_handler import GpxDataCacheHandler
@@ -66,7 +66,7 @@ def prepare_download_city_rivers(query: OverpassQuery,
                                  bounds=bounds,
                                  include_way_nodes=True,
                                  return_geometry=False) 
-        if get_stream_width(caracteristic_length) > 0:
+        if get_stream_visualization(caracteristic_length)[0] > 0:
             query.add_overpass_query(array_name=STREAMS_LINE_WAYS_ARRAY_NAME,
                                     query_elements=['way["waterway"~"(stream)"]'
                                                     '["tunnel"!~".*"]'],
@@ -74,21 +74,42 @@ def prepare_download_city_rivers(query: OverpassQuery,
                                     include_way_nodes=True,
                                     return_geometry=False)
 
-def get_stream_width(domain_diagonal: float) -> float:
-    """Returns a stream width in degrees on the map."""
-    if domain_diagonal > 10000:
-        width = 0.
-    else:
-        width = min(np.log(10000/domain_diagonal)*4+3,7)
-    return np.rad2deg(width/EARTH_RADIUS_M)
+def get_stream_visualization(domain_diagonal: float) -> tuple[float, float]:
+    """Returns stream visualization characteristics based on map zoom level.
+    - For domain_diagonal > 10000m: No streams (width=0, alpha=0)
+    - For domain_diagonal between 10000m and 2000m: Gradual appearance
+    - For domain_diagonal < 2000m: Full visibility (max width and opacity)
+    """
+    # Constants for transition
+    MAX_DISTANCE = 10000  # meters - no streams above this
+    MIN_DISTANCE = 2000   # meters - full visibility below this
+    MAX_WIDTH_M = 4      # maximum width in meters
+    MIN_WIDTH_M = 2      # minimum width in meters when streams start appearing
+
+    if domain_diagonal >= MAX_DISTANCE:
+        return 0,0
+
+    if domain_diagonal <= MIN_DISTANCE:
+        width_deg = np.rad2deg(MAX_WIDTH_M/EARTH_RADIUS_M)
+        return width_deg, 1.0
+
+    # Calculate transition factor (0 to 1)
+    factor = np.power((MAX_DISTANCE - domain_diagonal) / (MAX_DISTANCE - MIN_DISTANCE), 2)
+
+    width_m = MIN_WIDTH_M + (MAX_WIDTH_M - MIN_WIDTH_M) * factor
+    width_deg = np.rad2deg(width_m/EARTH_RADIUS_M)
+
+    alpha = factor
+
+    return width_deg, alpha
 
 @profile
 def process_city_rivers(query: OverpassQuery,
-                        bounds: GpxBounds) -> SurfacePolygons:
+                        bounds: GpxBounds) -> list[PolygonAlpha]:
     """Process the overpass API result to get the rivers of a city."""
     if query.is_cached(RIVERS_CACHE.name):
         cache_file = query.get_cache_file(RIVERS_CACHE.name)
-        rivers_patches = read_pickle(cache_file)
+        rivers_result = read_pickle(cache_file)
     else:
         with Profiling.Scope("Process Rivers"):
             caracteristic_length = bounds.diagonal_m
@@ -101,17 +122,21 @@ def process_city_rivers(query: OverpassQuery,
             rivers_lines_polygons = get_rivers_polygons_from_lines(api_result=rivers_line_results,
                                                                    width=RIVER_LINE_WIDTH)
             rivers = rivers_lines_polygons + rivers
-            stream_linewidth = get_stream_width(caracteristic_length)
+            rivers_patches = create_patch_collection_from_polygons(rivers)
+            rivers_result: list[PolygonAlpha] = [PolygonAlpha(polygons=rivers_patches,
+                                                                          alpha=1.0)]
+            stream_linewidth, stream_alpha = get_stream_visualization(caracteristic_length)
             if stream_linewidth > 0:
                 stream_line_results = query.get_query_result(STREAMS_LINE_WAYS_ARRAY_NAME)
                 stream_line_polygons = get_rivers_polygons_from_lines(api_result=stream_line_results,
                                                                       width=stream_linewidth)
-                rivers = stream_line_polygons + rivers
+                streams_patches = create_patch_collection_from_polygons(stream_line_polygons)
+                rivers_result.append(PolygonAlpha(polygons=streams_patches,
+                                                        alpha=stream_alpha))
             logger.info(f"Found {len(rivers_relations)} polygons for rivers "
                         f"with relations and {len(rivers_ways)} with ways and"
                         f" {len(rivers_lines_polygons)} created with river main line")
-            rivers_patches = create_patch_collection_from_polygons(rivers)
         cache_pkl = RIVERS_CACHE.get_path(bounds)
-        write_pickle(cache_pkl, rivers_patches)
+        write_pickle(cache_pkl, rivers_result)
         query.add_cached_result(RIVERS_CACHE.name, cache_file=cache_pkl)
-    return rivers_patches
+    return rivers_result

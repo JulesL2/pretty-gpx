@@ -10,6 +10,7 @@ from pretty_gpx.common.drawing.drawing_data import PlotData
 from pretty_gpx.common.drawing.drawing_data import PolygonCollectionData
 from pretty_gpx.common.drawing.drawing_data import ScatterData
 from pretty_gpx.common.drawing.drawing_data import TextData
+from pretty_gpx.common.drawing.drawing_data import PolygonAlphaCollectionData
 from pretty_gpx.common.drawing.elevation_stats_section import ElevationStatsSection
 from pretty_gpx.common.gpx.gpx_bounds import GpxBounds
 from pretty_gpx.common.layout.paper_size import PaperSize
@@ -183,7 +184,7 @@ def init_and_populate_drawing_figure(gpx_data: CityAugmentedGpxData,
     track_data: list[BaseDrawingData] = [PlotData(x=gpx_track.list_lon, y=gpx_track.list_lat, linewidth=2.0)]
     road_data: list[BaseDrawingData] = []
     point_data: list[BaseDrawingData] = []
-    rivers_data: list[PolygonCollectionData] = [PolygonCollectionData(polygons=rivers)]
+    rivers_data: list[PolygonAlphaCollectionData] = [PolygonAlphaCollectionData(transparent_polygons=rivers)]
     forests_data: list[PolygonCollectionData] = [PolygonCollectionData(polygons=forests)]
     farmland_data: list[PolygonCollectionData] = [PolygonCollectionData(polygons=farmland)]
 

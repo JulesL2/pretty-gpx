@@ -23,6 +23,7 @@ from shapely import Polygon as ShapelyPolygon
 from shapely.prepared import prep
 
 from pretty_gpx.common.data.overpass_request import ListLonLat
+from pretty_gpx.common.utils.asserts import assert_same_len
 from pretty_gpx.common.utils.logger import logger
 from pretty_gpx.common.utils.profile import profile
 from pretty_gpx.common.utils.utils import are_close
@@ -35,6 +36,12 @@ class SurfacePolygons:
     """Surface Polygons."""
     exterior_polygons: list[Polygon]
     interior_polygons: list[Polygon]
+
+@dataclass(kw_only=True)
+class PolygonAlpha:
+    """Transparent Polygons."""
+    polygons: SurfacePolygons
+    alpha: float
 
 
 T = TypeVar('T', bound=list[RelationWayGeometryValue] | ListLonLat)

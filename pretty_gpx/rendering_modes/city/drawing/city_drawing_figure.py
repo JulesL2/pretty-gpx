@@ -9,6 +9,7 @@ from pretty_gpx.common.drawing.drawing_data import BaseDrawingData
 from pretty_gpx.common.drawing.drawing_data import PolygonCollectionData
 from pretty_gpx.common.drawing.drawing_data import TextData
 from pretty_gpx.common.drawing.elevation_stats_section import ElevationStatsSection
+from pretty_gpx.common.drawing.drawing_data import PolygonAlphaCollectionData
 from pretty_gpx.common.structure import DrawingFigure
 from pretty_gpx.common.structure import DrawingParams
 from pretty_gpx.common.utils.profile import profile
@@ -38,7 +39,7 @@ class CityDrawingFigure(DrawingFigure[CityDrawingParams]):
     track_data: list[BaseDrawingData]
     road_data: list[BaseDrawingData]
     point_data: list[BaseDrawingData]
-    rivers_data: list[PolygonCollectionData]
+    rivers_data: list[PolygonAlphaCollectionData]
     forests_data: list[PolygonCollectionData]
     farmland_data: list[PolygonCollectionData]
     elevation_profile: ElevationStatsSection

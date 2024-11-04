@@ -11,6 +11,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path
 
 from pretty_gpx.common.data.overpass_processing import SurfacePolygons
+from pretty_gpx.common.data.overpass_processing import PolygonAlpha
 from pretty_gpx.common.utils.profile import Profiling
 
 
@@ -126,3 +127,21 @@ class PolygonCollectionData:
             ax.add_collection(PatchCollection(self.polygons.interior_polygons,
                                               facecolor=color_background,
                                               edgecolor=None))
+
+@dataclass
+class PolygonAlphaCollectionData:
+    """ShapelyPolygon Data."""
+    transparent_polygons: list[PolygonAlpha]
+
+    def plot(self, ax: Axes, color_patch: str, color_background: str) -> None:
+        """Plot the polygons."""
+        for i in range(len(self.transparent_polygons)):
+            ax.add_collection(PatchCollection(self.transparent_polygons[i].polygons.exterior_polygons,
+                                              facecolor=color_patch,
+                                              edgecolor=None,
+                                              alpha=self.transparent_polygons[i].alpha))
+            if self.transparent_polygons[i].polygons.interior_polygons is not None and (
+               len(self.transparent_polygons[i].polygons.interior_polygons) > 0):
+                ax.add_collection(PatchCollection(self.transparent_polygons[i].polygons.interior_polygons,
+                                                  facecolor=color_background,
+                                                  edgecolor=None))
