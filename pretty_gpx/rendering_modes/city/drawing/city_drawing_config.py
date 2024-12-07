@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """City Drawing Style/Size Config."""
+import os
 from dataclasses import dataclass
 
 from matplotlib.path import Path
@@ -43,6 +44,11 @@ class CityDrawingSizeConfig:
     bridge_markersize: float
     poi_markersize: float
 
+    bridge_markersize: float
+
+    text_fontsize: float
+    text_arrow_linewidth: float
+
     @staticmethod
     def default(paper_size: PaperSize, diagonal_distance_m: float) -> 'CityDrawingSizeConfig':
         """Default City Drawing Size Config."""
@@ -59,6 +65,8 @@ class CityDrawingSizeConfig:
             CityRoadType.STREET: 0.25*scale,
             CityRoadType.ACCESS_ROAD: 0.1*scale
         }
+
+        bridge_markersize = mm_to_point(7.0) * scale
 
         # Set a maximum track linewidth to avoid masking data
         max_track_linewidth = (linewidth_priority[CityRoadType.SECONDARY_ROAD] +

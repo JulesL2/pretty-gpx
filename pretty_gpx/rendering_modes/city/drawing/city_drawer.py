@@ -180,6 +180,7 @@ def init_and_populate_drawing_figure(gpx_data: CityAugmentedGpxData,
     rivers_data: list[PolygonCollectionData] = [PolygonCollectionData(polygons=download_data.rivers)]
     forests_data: list[PolygonCollectionData] = [PolygonCollectionData(polygons=download_data.forests)]
     farmland_data: list[PolygonCollectionData] = [PolygonCollectionData(polygons=download_data.farmlands)]
+    bridges_l: list[CityBridge] = download_data.bridges
 
     for priority, way in download_data.roads.items():
         road_data.append(LineCollectionData(way, linewidth=drawing_size_config.linewidth_priority[priority], zorder=1))
@@ -205,6 +206,30 @@ def init_and_populate_drawing_figure(gpx_data: CityAugmentedGpxData,
                                   markersize=drawing_size_config.end_markersize))
 
     annotation_data: list[BaseDrawingData] = texts + arrows + scatters.list_scatter_data  # type:ignore
+
+    scatters = init_annotated_scatter_collection(city_bridges=bridges_l,
+                                                 drawing_style_config=drawing_style_config,
+                                                 drawing_size_config=drawing_size_config)
+
+    plots_x_to_avoid, plots_y_to_avoid = [gpx_track.list_lon], [gpx_track.list_lat]
+
+    for y in b.lat_min+b.dlat*np.concatenate((np.linspace(0., download_data.layout.stats_relative_h + 
+                                                          download_data.layout.elevation_relative_h,
+                                                          num=10, endpoint=True),  # Stats+Elevation area
+                                              np.linspace(1.0-download_data.layout.title_relative_h, 1.0,
+                                                          num=10, endpoint=True))):  # Title area
+        plots_x_to_avoid.append([b.lon_min, b.lon_max])
+        plots_y_to_avoid.append([y, y])
+
+    texts, arrows = allocate_text(base_fig=download_data.paper_fig,
+                                  scatters=scatters,
+                                  plots_x_to_avoid=plots_x_to_avoid,
+                                  plots_y_to_avoid=plots_y_to_avoid,
+                                  output_linewidth=drawing_size_config.text_arrow_linewidth,
+                                  fontsize=drawing_size_config.text_fontsize,
+                                  fontproperties=FontEnum.ANNOTATION.value)
+
+    bridges_data: list[BaseDrawingData] =  texts + arrows + scatters.list_scatter_data  # type:ignore
 
     plotter = CityDrawingFigure(paper_size=download_data.paper_fig.paper_size,
                                 latlon_aspect_ratio=download_data.paper_fig.latlon_aspect_ratio,
