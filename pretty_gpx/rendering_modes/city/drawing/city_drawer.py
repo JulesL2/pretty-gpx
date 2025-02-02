@@ -68,7 +68,7 @@ class CityDrawer(DrawerSingleTrack):
         scatter_points += process_city_pois(total_query, gpx_track)
         # TODO(upgrade): Draw the POIs as well. This is currently disabled because text allocation fails when there
         # are too many overlapping scatter points. Need to filter out the points that are too close to each other.
-        background = CityBackground.from_union_bounds(layouts.union_bounds)
+        background = CityBackground.from_union_bounds(layouts.union_bounds, self.params.user_road_precision)
 
         layout = layouts.layouts[paper]
         background.change_papersize(paper, layout.background_bounds)

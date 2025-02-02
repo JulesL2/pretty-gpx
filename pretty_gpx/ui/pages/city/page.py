@@ -6,6 +6,7 @@ from pretty_gpx.common.drawing.utils.scatter_point import ScatterPointCategory
 from pretty_gpx.rendering_modes.city.drawing.city_colors import CITY_COLOR_THEMES
 from pretty_gpx.rendering_modes.city.drawing.city_drawer import CityDrawer
 from pretty_gpx.rendering_modes.city.drawing.city_params import CityParams
+from pretty_gpx.ui.pages.template.ui_input import UiDropdownStr
 from pretty_gpx.ui.pages.template.ui_input import UiInputInt
 from pretty_gpx.ui.pages.template.ui_manager import UiManager
 
@@ -19,6 +20,7 @@ def city_page() -> None:
 class CityUiManager(UiManager[CityDrawer]):
     """City Ui Manager."""
     uphill: UiInputInt
+    road_precision: UiDropdownStr
 
     def __init__(self) -> None:
         drawer = CityDrawer(params=CityParams.default(), top_ratio=0.18, bot_ratio=0.22, margin_ratio=0.1)
@@ -29,6 +31,13 @@ class CityUiManager(UiManager[CityDrawer]):
         with self.subclass_column:
             self.uphill = UiInputInt.create(label='D+ (m)', value="", on_enter=self.on_click_update,
                                             tooltip="Press Enter to override elevation from GPX")
+
+            self.road_precision = UiDropdownStr.create(label='Road precision',
+                                                       discrete_val=["Low", "Medium", "High", "Very High"],
+                                                       default_idx=1,
+                                                       on_change=self.on_click_update,
+                                                       tooltip="Change the roads level of details")
+
 
     @staticmethod
     def get_chat_msg() -> list[str]:
@@ -64,3 +73,4 @@ class CityUiManager(UiManager[CityDrawer]):
         self.drawer.params.user_dist_km = self.dist_km.value
         self.drawer.params.user_uphill_m = self.uphill.value
         self.drawer.params.user_title = self.title.value
+        self.drawer.params.user_road_precision = self.road_precision.value
